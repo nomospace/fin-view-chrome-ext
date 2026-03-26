@@ -9,6 +9,62 @@
     minTextLength: 10,
   };
 
+  // ==================== Markdown 解析 ====================
+  function parseMarkdown(text) {
+    if (!text) return '';
+    
+    // 转义 HTML
+    let html = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    
+    // 标题
+    html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+    html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+    
+    // 加粗和斜体
+    html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+    html = html.replace(/_(.+?)_/g, '<em>$1</em>');
+    
+    // 代码块
+    html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>');
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+    
+    // 列表
+    html = html.replace(/^\* (.+)$/gm, '<li>$1</li>');
+    html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+    html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+    
+    // 包装连续的 li 为 ul
+    html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+    
+    // 引用
+    html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
+    
+    // 分隔线
+    html = html.replace(/^---$/gm, '<hr>');
+    html = html.replace(/^\*\*\*$/gm, '<hr>');
+    
+    // 段落和换行
+    html = html.replace(/\n\n/g, '</p><p>');
+    html = html.replace(/\n/g, '<br>');
+    
+    // 包装
+    html = '<p>' + html + '</p>';
+    
+    // 清理空段落
+    html = html.replace(/<p>\s*<\/p>/g, '');
+    html = html.replace(/<p>\s*<(h[1-6]|ul|ol|pre|blockquote|hr)/g, '<$1');
+    html = html.replace(/<\/(h[1-6]|ul|ol|pre|blockquote)>\s*<\/p>/g, '</$1>');
+    
+    return html;
+  }
+
   // ==================== 状态 ====================
   let apiKey = null;
   let selectionButton = null;
@@ -152,7 +208,7 @@
         <span class="finview-title">AI 解读</span>
         <button class="finview-close" title="关闭">✕</button>
       </div>
-      <div class="finview-content">${escapeHtml(content)}</div>
+      <div class="finview-content">${parseMarkdown(content)}</div>
     `;
 
     centerDialog(dialog);
