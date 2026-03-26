@@ -13,7 +13,6 @@
   let apiKey = null;
   let selectionButton = null;
   let savedSelection = null;
-  let savedRect = null;
   let isLoading = false;
   let resultId = 0; // 用于生成唯一 ID
 
@@ -55,7 +54,6 @@
           const rect = range.getBoundingClientRect();
           
           savedSelection = text;
-          savedRect = rect;
           
           showButton(rect);
         } catch (e) {
@@ -63,21 +61,19 @@
         }
       } else {
         savedSelection = null;
-        savedRect = null;
         hideButton();
       }
     }, 50);
   });
 
   document.addEventListener('mousedown', (e) => {
-    if (!e.target.closest('#finview-btn') && !e.target.closest('.finview-result')) {
+    if (!e.target.closest('#finview-btn') && !e.target.closest('.finview-dialog')) {
       hideButton();
       setTimeout(() => {
         const selection = window.getSelection();
         const text = selection?.toString().trim();
         if (!text || text.length < CONFIG.minTextLength) {
           savedSelection = null;
-          savedRect = null;
         }
       }, 100);
     }
@@ -123,111 +119,131 @@
     }
   }
 
-  function showLoading(rect) {
-    const scrollTop = window.scrollY || document.documentElement.scrollTop;
-    const scrollLeft = window.scrollX || document.documentElement.scrollLeft;
-    
+  function showLoading() {
     resultId++;
-    const currentId = `finview-result-${resultId}`;
+    const currentId = `finview-dialog-${resultId}`;
 
-    const resultDiv = document.createElement('div');
-    resultDiv.className = 'finview-result finview-loading';
-    resultDiv.id = currentId;
-    resultDiv.innerHTML = `
+    const dialog = document.createElement('div');
+    dialog.className = 'finview-dialog finview-loading';
+    dialog.id = currentId;
+    dialog.innerHTML = `
       <div class="finview-loading-inner">
         <span class="finview-spinner"></span>
         <span>AI 解读中...</span>
       </div>
     `;
 
-    positionResult(resultDiv, rect, scrollTop, scrollLeft);
-    document.body.appendChild(resultDiv);
+    centerDialog(dialog);
+    document.body.appendChild(dialog);
     
     return currentId;
   }
 
-  function showResult(rect, content) {
-    const scrollTop = window.scrollY || document.documentElement.scrollTop;
-    const scrollLeft = window.scrollX || document.documentElement.scrollLeft;
-    
+  function showResult(content) {
     resultId++;
-    const currentId = `finview-result-${resultId}`;
+    const currentId = `finview-dialog-${resultId}`;
 
-    const resultDiv = document.createElement('div');
-    resultDiv.className = 'finview-result';
-    resultDiv.id = currentId;
-    resultDiv.innerHTML = `
+    const dialog = document.createElement('div');
+    dialog.className = 'finview-dialog';
+    dialog.id = currentId;
+    dialog.innerHTML = `
       <div class="finview-header">
         <span class="finview-logo">🦞</span>
         <span class="finview-title">AI 解读</span>
-        <button class="finview-close" data-id="${currentId}">✕</button>
+        <button class="finview-close" title="关闭">✕</button>
       </div>
       <div class="finview-content">${escapeHtml(content)}</div>
     `;
 
-    positionResult(resultDiv, rect, scrollTop, scrollLeft);
-    document.body.appendChild(resultDiv);
+    centerDialog(dialog);
+    document.body.appendChild(dialog);
     
-    // 绑定关闭按钮事件
-    resultDiv.querySelector('.finview-close').addEventListener('click', () => {
-      resultDiv.remove();
+    // 绑定关闭按钮
+    dialog.querySelector('.finview-close').addEventListener('click', () => {
+      dialog.remove();
     });
-  }
-
-  function positionResult(resultDiv, rect, scrollTop, scrollLeft) {
-    if (!resultDiv) return;
-
-    let left = rect.left + scrollLeft;
-    let top = rect.bottom + scrollTop + 12;
-    const maxWidth = Math.min(Math.max(rect.width, 400), 550);
-
-    if (left + maxWidth > window.innerWidth + scrollLeft - 20) {
-      left = window.innerWidth + scrollLeft - maxWidth - 20;
-    }
-    if (left < scrollLeft + 10) {
-      left = scrollLeft + 10;
-    }
-
-    resultDiv.style.left = `${left}px`;
-    resultDiv.style.top = `${top}px`;
-    resultDiv.style.width = `${maxWidth}px`;
-  }
-
-  function showError(rect, message) {
-    const scrollTop = window.scrollY || document.documentElement.scrollTop;
-    const scrollLeft = window.scrollX || document.documentElement.scrollLeft;
     
+    // 按住拖动
+    makeDraggable(dialog);
+  }
+
+  function showError(message) {
     resultId++;
-    const currentId = `finview-result-${resultId}`;
+    const currentId = `finview-dialog-${resultId}`;
     
     let errorTitle = '解读失败';
     if (message.includes('配置 API Key')) {
       errorTitle = '未配置';
     }
     
-    const resultDiv = document.createElement('div');
-    resultDiv.className = 'finview-result finview-error';
-    resultDiv.id = currentId;
-    resultDiv.innerHTML = `
+    const dialog = document.createElement('div');
+    dialog.className = 'finview-dialog finview-error';
+    dialog.id = currentId;
+    dialog.innerHTML = `
       <div class="finview-header">
         <span class="finview-logo">🦞</span>
         <span class="finview-title">${errorTitle}</span>
-        <button class="finview-close" data-id="${currentId}">✕</button>
+        <button class="finview-close" title="关闭">✕</button>
       </div>
       <div class="finview-content">
         <div class="finview-error-detail">${escapeHtml(message)}</div>
       </div>
     `;
 
-    positionResult(resultDiv, rect, scrollTop, scrollLeft);
-    document.body.appendChild(resultDiv);
+    centerDialog(dialog);
+    document.body.appendChild(dialog);
     
-    // 绑定关闭按钮事件
-    resultDiv.querySelector('.finview-close').addEventListener('click', () => {
-      resultDiv.remove();
+    // 绑定关闭按钮
+    dialog.querySelector('.finview-close').addEventListener('click', () => {
+      dialog.remove();
     });
     
+    makeDraggable(dialog);
     console.error('[FinView]', message);
+  }
+
+  function centerDialog(dialog) {
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    dialog.style.left = `${(viewportWidth - 500) / 2}px`;
+    dialog.style.top = `${Math.max(50, (viewportHeight - 400) / 2)}px`;
+  }
+
+  function makeDraggable(dialog) {
+    const header = dialog.querySelector('.finview-header');
+    if (!header) return;
+    
+    let isDragging = false;
+    let startX, startY, startLeft, startTop;
+    
+    header.style.cursor = 'move';
+    
+    header.addEventListener('mousedown', (e) => {
+      if (e.target.classList.contains('finview-close')) return;
+      
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      startLeft = dialog.offsetLeft;
+      startTop = dialog.offsetTop;
+      
+      e.preventDefault();
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      
+      dialog.style.left = `${Math.max(0, startLeft + dx)}px`;
+      dialog.style.top = `${Math.max(0, startTop + dy)}px`;
+    });
+    
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
   }
 
   function escapeHtml(text) {
@@ -241,23 +257,22 @@
     if (isLoading) return;
 
     const text = savedSelection;
-    const rect = savedRect;
 
-    if (!text || !rect) {
+    if (!text) {
       return;
     }
 
     hideButton();
     isLoading = true;
 
-    const loadingId = showLoading(rect);
+    const loadingId = showLoading();
 
     try {
       const key = await loadApiKey();
       
       if (!key) {
         document.getElementById(loadingId)?.remove();
-        showError(rect, '请点击扩展图标配置 API Key');
+        showError('请点击扩展图标配置 API Key');
         return;
       }
       
@@ -279,13 +294,13 @@
       document.getElementById(loadingId)?.remove();
       
       if (!response.success) {
-        showError(rect, response.error || 'AI 调用失败');
+        showError(response.error || 'AI 调用失败');
       } else {
-        showResult(rect, response.result);
+        showResult(response.result);
       }
     } catch (e) {
       document.getElementById(loadingId)?.remove();
-      showError(rect, e.message);
+      showError(e.message);
     } finally {
       isLoading = false;
     }

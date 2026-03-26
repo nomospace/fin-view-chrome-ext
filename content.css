@@ -26,39 +26,43 @@
   font-size: 14px;
 }
 
-/* 结果卡片 */
-.finview-result {
-  position: absolute;
-  z-index: 999998;
+/* Dialog 样式 */
+.finview-dialog {
+  position: fixed;
+  z-index: 999999;
   background: white;
-  border-radius: 6px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   animation: finview-fadeIn 0.2s ease;
-  overflow: hidden;
-  border: 1px solid #E0E0E0;
+  max-width: 500px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes finview-fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 .finview-header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  background: #F5F5F5;
-  border-bottom: 1px solid #E0E0E0;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #F8F9FA;
+  border-bottom: 1px solid #E9ECEF;
+  border-radius: 8px 8px 0 0;
+  flex-shrink: 0;
 }
 
 .finview-logo {
-  font-size: 14px;
+  font-size: 18px;
 }
 
 .finview-title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: #333;
   flex: 1;
@@ -68,46 +72,64 @@
   background: none;
   border: none;
   color: #999;
-  font-size: 16px;
+  font-size: 20px;
   cursor: pointer;
-  padding: 2px 6px;
+  padding: 0;
   line-height: 1;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
 }
 
 .finview-close:hover {
+  background: #EEE;
   color: #333;
 }
 
 .finview-content {
-  padding: 12px;
+  padding: 16px;
   font-size: 14px;
-  line-height: 1.6;
+  line-height: 1.7;
   color: #333;
-  background: white;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
-.finview-content br {
-  display: block;
-  margin-bottom: 6px;
+.finview-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.finview-content::-webkit-scrollbar-track {
+  background: #F1F1F1;
+  border-radius: 3px;
+}
+
+.finview-content::-webkit-scrollbar-thumb {
+  background: #CCC;
+  border-radius: 3px;
+}
+
+.finview-content::-webkit-scrollbar-thumb:hover {
+  background: #AAA;
 }
 
 /* 加载状态 */
-.finview-loading {
-  background: white;
-}
-
-.finview-loading-inner {
+.finview-loading .finview-loading-inner {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  font-size: 13px;
+  gap: 10px;
+  padding: 24px 32px;
+  font-size: 14px;
   color: #666;
 }
 
 .finview-spinner {
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   border: 2px solid #4A90D9;
   border-top-color: transparent;
   border-radius: 50%;
@@ -120,39 +142,19 @@
 
 /* 错误状态 */
 .finview-error .finview-header {
-  background: #FFEBEE;
-  border-color: #FFCDD2;
+  background: #FFF5F5;
+  border-color: #FED7D7;
 }
 
 .finview-error .finview-title {
-  color: #C62828;
-}
-
-.finview-error .finview-content {
-  color: #C62828;
+  color: #C53030;
 }
 
 .finview-error-detail {
-  font-family: monospace;
-  font-size: 12px;
-  word-break: break-all;
-  background: #FFF8F8;
-  padding: 8px;
+  font-size: 13px;
+  color: #C53030;
+  background: #FFF5F5;
+  padding: 12px;
   border-radius: 4px;
-  border: 1px solid #FFCDD2;
-}
-
-.finview-copy-error {
-  margin-top: 8px;
-  padding: 5px 10px;
-  background: #E53935;
-  color: white;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.finview-copy-error:hover {
-  background: #C62828;
+  border: 1px solid #FED7D7;
 }
